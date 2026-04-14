@@ -1,12 +1,11 @@
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Budget, UserProfile } from '../types';
 
 // Extend jsPDF type for autotable
 interface jsPDFWithPlugin extends jsPDF {
-  autoTable: (options: any) => jsPDF;
   lastAutoTable: {
     finalY: number;
   };
@@ -67,7 +66,7 @@ export const generateBudgetPDF = (budget: Budget, userProfile: UserProfile) => {
     `R$ ${item.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
   ]);
 
-  doc.autoTable({
+  autoTable(doc, {
     startY: 85,
     head: [['DESCRIÇÃO DOS SERVIÇOS', 'QTD', 'UNID', 'UNITÁRIO', 'REF. MERCADO', 'TOTAL']],
     body: tableData,

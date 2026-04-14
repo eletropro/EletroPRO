@@ -1,13 +1,13 @@
 import React from 'react';
-import { Budget, UserProfile } from '@/types';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { FileDown, Receipt, Edit, Trash2 } from 'lucide-react';
-import { generateBudgetPDF, generateReceiptPDF } from '@/lib/pdf';
+import { Budget, UserProfile } from '../types';
+import { Button } from './ui/button';
+import { FileDown, Receipt, Edit, Trash2, Calendar, User, DollarSign, CheckCircle2, Clock, XCircle, MoreVertical, FileText } from 'lucide-react';
+import { generateBudgetPDF, generateReceiptPDF } from '../lib/pdf';
 import { format } from 'date-fns';
-import { db } from '@/firebase';
+import { ptBR } from 'date-fns/locale';
+import { db } from '../firebase';
 import { deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface BudgetListProps {
   budgets: Budget[];
@@ -17,60 +17,121 @@ interface BudgetListProps {
 
 export default function BudgetList({ budgets, userProfile, onEdit }: BudgetListProps) {
   const handleDelete = async (id: string) => {
-    await deleteDoc(doc(db, 'budgets', id));
+    if (confirm('Tem certeza que deseja excluir este orçamento?')) {
+      await deleteDoc(doc(db, 'budgets', id));
+    }
   };
 
   const updateStatus = async (id: string, status: Budget['status']) => {
     await updateDoc(doc(db, 'budgets', id), { status });
   };
 
-  const getStatusBadge = (status: Budget['status']) => {
-    const colors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      approved: 'bg-blue-100 text-blue-800',
-      completed: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800'
-    };
-    return <Badge className={colors[status]}>{status.toUpperCase()}</Badge>;
+  const statusConfig = {
+    pending: { label: 'Pendente', icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+    approved: { label: 'Aprovado', icon: CheckCircle2, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+    completed: { label: 'Concluído', icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+    cancelled: { label: 'Cancelado', icon: XCircle, color: 'text-rose-500', bg: 'bg-rose-500/10' }
   };
 
+  if (budgets.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+        <div className="p-6 bg-accent/30 rounded-full text-muted-foreground">
+          <FileText size={48} />
+        </div>
+        <div className="space-y-1">
+          <h3 className="text-xl font-bold">Nenhum orçamento encontrado</h3>
+          <p className="text-muted-foreground">Comece criando seu primeiro orçamento profissional.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Cliente</TableHead>
-            <TableHead>Data</TableHead>
-            <TableHead>Valor</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {budgets.map((budget) => (
-            <TableRow key={budget.id}>
-              <TableCell className="font-medium">{budget.clientName}</TableCell>
-              <TableCell>{format(new Date(budget.date), 'dd/MM/yyyy')}</TableCell>
-              <TableCell>R$ {budget.totalAmount.toFixed(2)}</TableCell>
-              <TableCell>{getStatusBadge(budget.status)}</TableCell>
-              <TableCell className="text-right space-x-2">
-                <Button variant="ghost" size="icon" onClick={() => generateBudgetPDF(budget, userProfile)} title="Baixar PDF">
-                  <FileDown className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => generateReceiptPDF(budget, userProfile)} title="Gerar Recibo">
-                  <Receipt className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => onEdit(budget)} title="Editar">
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => handleDelete(budget.id)} title="Excluir">
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <AnimatePresence mode="popLayout">
+        {budgets.map((budget, index) => {
+          const status = statusConfig[budget.status];
+          return (
+            <motion.div
+              key={budget.id}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ delay: index * 0.05 }}
+              className="group relative"
+            >
+              <div className="glass bg-accent/20 hover:bg-accent/40 transition-all duration-300 rounded-[2rem] p-6 border-border/50 hover:border-primary/30 shadow-xl hover:shadow-primary/5">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className={`p-4 rounded-2xl ${status.bg} ${status.color}`}>
+                      <status.icon size={24} />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold tracking-tight">{budget.clientName}</h3>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                        <Calendar size={14} />
+                        <span>{format(new Date(budget.date), "dd 'de' MMMM", { locale: ptBR })}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${status.bg} ${status.color}`}>
+                    {status.label}
+                  </div>
+                </div>
+
+                <div className="flex items-end justify-between">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Valor Total</p>
+                    <p className="text-3xl font-heading font-bold text-primary">
+                      R$ {budget.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => generateBudgetPDF(budget, userProfile)}
+                      className="rounded-xl hover:bg-primary/10 hover:text-primary"
+                      title="Baixar PDF"
+                    >
+                      <FileDown size={20} />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => generateReceiptPDF(budget, userProfile)}
+                      className="rounded-xl hover:bg-primary/10 hover:text-primary"
+                      title="Gerar Recibo"
+                    >
+                      <Receipt size={20} />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => onEdit(budget)}
+                      className="rounded-xl hover:bg-primary/10 hover:text-primary"
+                      title="Editar"
+                    >
+                      <Edit size={20} />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => handleDelete(budget.id)}
+                      className="rounded-xl hover:bg-destructive/10 hover:text-destructive"
+                      title="Excluir"
+                    >
+                      <Trash2 size={20} />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
     </div>
   );
 }

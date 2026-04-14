@@ -51,6 +51,15 @@ export interface Transaction {
   budgetId?: string;
 }
 
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  date: string;
+  read: boolean;
+  budgetId?: string;
+}
+
 export enum OperationType {
   CREATE = 'create',
   UPDATE = 'update',
