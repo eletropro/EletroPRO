@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { Client } from '../types';
-import { db, auth } from '../firebase';
+import { Client } from '@/types';
+import { db, auth } from '@/firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Edit, Trash2, UserPlus, Search } from 'lucide-react';
 
 interface ClientListProps {
@@ -73,9 +73,7 @@ export default function ClientList({ clients }: ClientListProps) {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Excluir este cliente?')) {
-      await deleteDoc(doc(db, 'clients', id));
-    }
+    await deleteDoc(doc(db, 'clients', id));
   };
 
   return (

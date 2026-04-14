@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { UserProfile } from '../types';
-import { db } from '../firebase';
+import { UserProfile } from '@/types';
+import { db } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface UserProfileFormProps {
   profile: UserProfile;
@@ -26,7 +26,6 @@ export default function UserProfileForm({ profile }: UserProfileFormProps) {
       businessAddress,
       displayName
     });
-    alert('Perfil atualizado com sucesso!');
   };
 
   return (

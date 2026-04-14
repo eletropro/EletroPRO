@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { db, auth } from '../firebase';
+import { db, auth } from '@/firebase';
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { Budget, BudgetItem, OperationType, Client } from '../types';
-import { BRASILIA_PRICES } from '../constants';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Label } from './ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Budget, BudgetItem, OperationType, Client } from '@/types';
+import { BRASILIA_PRICES } from '@/constants';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, Search, User } from 'lucide-react';
 
 interface BudgetFormProps {
@@ -38,7 +38,9 @@ export default function BudgetForm({ budget, clients, onSuccess }: BudgetFormPro
     const newItem: BudgetItem = {
       description: item.description || '',
       quantity: item.quantity || 1,
+      unit: item.unit || 'un',
       unitPrice: item.unitPrice || 0,
+      marketPrice: item.marketPrice || item.unitPrice || 0,
       total: (item.quantity || 1) * (item.unitPrice || 0)
     };
     setItems([...items, newItem]);
@@ -54,7 +56,9 @@ export default function BudgetForm({ budget, clients, onSuccess }: BudgetFormPro
     
     if (field === 'quantity') item.quantity = Number(value);
     if (field === 'unitPrice') item.unitPrice = Number(value);
+    if (field === 'marketPrice') item.marketPrice = Number(value);
     if (field === 'description') item.description = String(value);
+    if (field === 'unit') item.unit = String(value);
     
     item.total = item.quantity * item.unitPrice;
     newItems[index] = item;
@@ -148,9 +152,15 @@ export default function BudgetForm({ budget, clients, onSuccess }: BudgetFormPro
                 type="button" 
                 variant="outline" 
                 className="justify-start text-xs h-auto py-2"
-                onClick={() => addItem({ description: p.description, unitPrice: p.avgPrice })}
+                onClick={() => addItem({ 
+                  description: p.description, 
+                  unitPrice: p.avgPrice, 
+                  unit: p.unit, 
+                  marketPrice: p.avgPrice 
+                })}
               >
                 <div className="text-left">
+                  <div className="text-[10px] uppercase text-amber-600 font-bold">{p.category}</div>
                   <div className="font-bold">{p.description}</div>
                   <div className="text-muted-foreground">R$ {p.avgPrice.toFixed(2)} / {p.unit}</div>
                 </div>
@@ -160,43 +170,53 @@ export default function BudgetForm({ budget, clients, onSuccess }: BudgetFormPro
         </CardContent>
       </Card>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Descrição</TableHead>
-            <TableHead className="w-24">Qtd</TableHead>
-            <TableHead className="w-32">Unitário</TableHead>
-            <TableHead className="w-32">Total</TableHead>
-            <TableHead className="w-12"></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map((item, index) => (
-            <TableRow key={index}>
-              <TableCell>
-                <Input value={item.description} onChange={e => updateItem(index, 'description', e.target.value)} />
-              </TableCell>
-              <TableCell>
-                <Input type="number" value={item.quantity} onChange={e => updateItem(index, 'quantity', e.target.value)} />
-              </TableCell>
-              <TableCell>
-                <Input type="number" value={item.unitPrice} onChange={e => updateItem(index, 'unitPrice', e.target.value)} />
-              </TableCell>
-              <TableCell className="font-medium">
-                R$ {item.total.toFixed(2)}
-              </TableCell>
-              <TableCell>
-                <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(index)}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </TableCell>
+      <div className="overflow-x-auto border rounded-xl">
+        <Table>
+          <TableHeader className="bg-slate-50">
+            <TableRow>
+              <TableHead className="min-w-[200px]">Descrição</TableHead>
+              <TableHead className="w-20">Qtd</TableHead>
+              <TableHead className="w-24">Unid</TableHead>
+              <TableHead className="w-32">Unitário</TableHead>
+              <TableHead className="w-32">Ref. BSB</TableHead>
+              <TableHead className="w-32">Total</TableHead>
+              <TableHead className="w-12"></TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {items.map((item, index) => (
+              <TableRow key={index}>
+                <TableCell>
+                  <Input value={item.description} onChange={e => updateItem(index, 'description', e.target.value)} className="h-9" />
+                </TableCell>
+                <TableCell>
+                  <Input type="number" value={item.quantity} onChange={e => updateItem(index, 'quantity', e.target.value)} className="h-9" />
+                </TableCell>
+                <TableCell>
+                  <Input value={item.unit} onChange={e => updateItem(index, 'unit', e.target.value)} className="h-9" />
+                </TableCell>
+                <TableCell>
+                  <Input type="number" value={item.unitPrice} onChange={e => updateItem(index, 'unitPrice', e.target.value)} className="h-9" />
+                </TableCell>
+                <TableCell>
+                  <div className="text-xs text-slate-500 font-medium">R$ {item.marketPrice?.toFixed(2)}</div>
+                </TableCell>
+                <TableCell className="font-bold text-amber-600">
+                  R$ {item.total.toFixed(2)}
+                </TableCell>
+                <TableCell>
+                  <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(index)} className="h-8 w-8">
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
       <div className="flex justify-between items-center">
-        <Button type="button" variant="outline" onClick={() => addItem({ description: '', quantity: 1, unitPrice: 0 })}>
+        <Button type="button" variant="outline" onClick={() => addItem({ description: '', quantity: 1, unit: 'un', unitPrice: 0 })}>
           <Plus className="mr-2 h-4 w-4" /> Adicionar Item
         </Button>
         <div className="text-2xl font-bold">

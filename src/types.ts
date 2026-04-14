@@ -2,6 +2,7 @@ export interface UserProfile {
   uid: string;
   email: string;
   displayName?: string;
+  photoURL?: string;
   businessName?: string;
   businessPhone?: string;
   businessAddress?: string;
@@ -20,7 +21,9 @@ export interface Client {
 export interface BudgetItem {
   description: string;
   quantity: number;
+  unit: string;
   unitPrice: number;
+  marketPrice?: number;
   total: number;
 }
 

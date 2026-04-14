@@ -3,12 +3,13 @@ import { auth, db } from './firebase';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { collection, query, where, onSnapshot, doc, getDoc, setDoc, orderBy } from 'firebase/firestore';
 import { Budget, Transaction, UserProfile, OperationType } from './types';
+import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { LogOut, Plus, Zap, LayoutDashboard, FileText, Wallet, User as UserIcon } from 'lucide-react';
+import { LogOut, Plus, Zap, LayoutDashboard, FileText, Wallet, User as UserIcon, Users } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import BudgetForm from './components/BudgetForm';
 import BudgetList from './components/BudgetList';
@@ -25,21 +26,23 @@ export default function App() {
   const [clients, setClients] = useState<Client[]>([]);
   const [editingBudget, setEditingBudget] = useState<Budget | undefined>();
   const [isBudgetDialogOpen, setIsBudgetDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        if (!userDoc.exists()) {
-          const newProfile: UserProfile = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email || '',
-            displayName: firebaseUser.displayName || '',
-          };
-          await setDoc(doc(db, 'users', firebaseUser.uid), newProfile);
-          setUser(newProfile);
+        if (userDoc.exists()) {
+          setUser({ uid: firebaseUser.uid, ...userDoc.data() } as UserProfile);
         } else {
-          setUser(userDoc.data() as UserProfile);
+          const newUser: UserProfile = {
+            uid: firebaseUser.uid,
+            displayName: firebaseUser.displayName || '',
+            email: firebaseUser.email || '',
+            photoURL: firebaseUser.photoURL || '',
+          };
+          await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
+          setUser(newUser);
         }
       } else {
         setUser(null);
@@ -54,75 +57,55 @@ export default function App() {
     if (!user) return;
 
     const bQuery = query(collection(db, 'budgets'), where('userId', '==', user.uid), orderBy('date', 'desc'));
-    const tQuery = query(collection(db, 'transactions'), where('userId', '==', user.uid), orderBy('date', 'desc'));
-
-    const unsubBudgets = onSnapshot(bQuery, (snapshot) => {
+    const unsubscribeBudgets = onSnapshot(bQuery, (snapshot) => {
       setBudgets(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Budget)));
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'budgets'));
+    });
 
-    const unsubTransactions = onSnapshot(tQuery, (snapshot) => {
+    const tQuery = query(collection(db, 'transactions'), where('userId', '==', user.uid), orderBy('date', 'desc'));
+    const unsubscribeTransactions = onSnapshot(tQuery, (snapshot) => {
       setTransactions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction)));
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'transactions'));
+    });
 
-    const unsubClients = onSnapshot(query(collection(db, 'clients'), where('userId', '==', user.uid), orderBy('name')), (snapshot) => {
+    const cQuery = query(collection(db, 'clients'), where('userId', '==', user.uid), orderBy('name'));
+    const unsubscribeClients = onSnapshot(cQuery, (snapshot) => {
       setClients(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Client)));
     });
 
-    const unsubProfile = onSnapshot(doc(db, 'users', user.uid), (doc) => {
-      if (doc.exists()) setUser(doc.data() as UserProfile);
-    });
-
     return () => {
-      unsubBudgets();
-      unsubTransactions();
-      unsubClients();
-      unsubProfile();
+      unsubscribeBudgets();
+      unsubscribeTransactions();
+      unsubscribeClients();
     };
   }, [user]);
 
-  const handleFirestoreError = (error: any, op: OperationType, path: string) => {
-    console.error(`Firestore Error [${op}] at ${path}:`, error);
+  const handleLogin = async () => {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
   };
 
-  const handleLogin = async () => {
-    try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
-    } catch (error) {
-      console.error("Login failed:", error);
-    }
-  };
+  const handleLogout = () => signOut(auth);
 
   if (loading) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-4">
-          <Zap className="h-12 w-12 text-yellow-500 animate-pulse" />
-          <p className="text-slate-600 font-medium">Carregando EletroPRO...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 p-4">
-        <Card className="w-full max-w-md border-none shadow-2xl">
-          <CardHeader className="text-center space-y-4">
-            <div className="mx-auto bg-yellow-500 p-3 rounded-2xl w-fit">
-              <Zap className="h-10 w-10 text-white" />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center space-y-2">
+            <div className="mx-auto bg-amber-100 w-16 h-16 rounded-2xl flex items-center justify-center mb-2">
+              <Zap className="h-8 w-8 text-amber-600" />
             </div>
-            <div>
-              <CardTitle className="text-3xl font-bold">EletroPRO</CardTitle>
-              <CardDescription className="text-lg">
-                Gestão Profissional para Eletricistas
-              </CardDescription>
-            </div>
+            <CardTitle className="text-2xl font-bold">EletroBudget BSB</CardTitle>
+            <p className="text-muted-foreground">Gestão profissional para eletricistas em Brasília</p>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <p className="text-center text-muted-foreground">
-              Crie orçamentos, emita recibos e controle suas finanças em um só lugar.
-            </p>
-            <Button onClick={handleLogin} className="w-full h-12 text-lg font-semibold bg-yellow-500 hover:bg-yellow-600 text-white">
+          <CardContent>
+            <Button onClick={handleLogin} className="w-full h-12 text-lg font-semibold rounded-xl bg-amber-600 hover:bg-amber-700">
               Entrar com Google
             </Button>
           </CardContent>
@@ -132,51 +115,49 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-20 md:pb-0 font-sans">
-      <header className="bg-white/80 backdrop-blur-md border-b sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-amber-500 p-2 rounded-xl shadow-lg shadow-amber-500/20">
-              <Zap className="h-6 w-6 text-white fill-white" />
+    <div className="min-h-screen bg-[#F8FAFC] pb-20 md:pb-0">
+      <header className="bg-white border-b sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="bg-amber-600 p-1.5 rounded-lg">
+              <Zap className="h-5 w-5 text-white" />
             </div>
-            <div className="flex flex-col">
-              <span className="font-display font-bold text-2xl tracking-tight leading-none">EletroPRO</span>
-              <span className="text-[10px] text-slate-400 font-bold tracking-widest uppercase">Brasília • DF</span>
-            </div>
+            <h1 className="text-xl font-display font-bold text-gray-900 hidden sm:block">EletroBudget BSB</h1>
           </div>
+          
           <div className="flex items-center gap-4">
-            <div className="hidden md:flex flex-col items-end mr-2">
-              <span className="text-sm font-semibold text-slate-700">{user.displayName || user.email}</span>
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider">Profissional Verificado</span>
+            <div className="flex items-center gap-2 mr-2">
+              <img src={user.photoURL} alt={user.displayName} className="h-8 w-8 rounded-full border" referrerPolicy="no-referrer" />
+              <span className="text-sm font-medium text-gray-700 hidden sm:block">{user.displayName}</span>
             </div>
-            <Button variant="outline" size="icon" className="rounded-full border-slate-200 hover:bg-slate-50" onClick={() => signOut(auth)}>
-              <LogOut className="h-4 w-4 text-slate-600" />
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="text-gray-500 hover:text-red-600">
+              <LogOut className="h-5 w-5" />
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto p-4 md:p-8 lg:p-12">
-        <Tabs defaultValue="dashboard" className="space-y-8">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <TabsList className="bg-slate-200/50 p-1 rounded-2xl w-full lg:w-auto self-start">
-              <TabsTrigger value="dashboard" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <TabsList className="bg-white p-1 rounded-2xl shadow-sm border h-auto flex-wrap">
+              <TabsTrigger value="dashboard" className="rounded-xl py-2.5 px-5">
                 <LayoutDashboard className="h-4 w-4 mr-2" />
                 Painel
               </TabsTrigger>
-              <TabsTrigger value="budgets" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <TabsTrigger value="budgets" className="rounded-xl py-2.5 px-5">
                 <FileText className="h-4 w-4 mr-2" />
                 Orçamentos
               </TabsTrigger>
-              <TabsTrigger value="clients" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                <UserIcon className="h-4 w-4 mr-2" />
+              <TabsTrigger value="clients" className="rounded-xl py-2.5 px-5">
+                <Users className="h-4 w-4 mr-2" />
                 Clientes
               </TabsTrigger>
-              <TabsTrigger value="finance" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <TabsTrigger value="finance" className="rounded-xl py-2.5 px-5">
                 <Wallet className="h-4 w-4 mr-2" />
                 Financeiro
               </TabsTrigger>
-              <TabsTrigger value="profile" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <TabsTrigger value="profile" className="rounded-xl py-2.5 px-5">
                 <UserIcon className="h-4 w-4 mr-2" />
                 Perfil
               </TabsTrigger>
@@ -185,7 +166,7 @@ export default function App() {
             <Dialog open={isBudgetDialogOpen} onOpenChange={setIsBudgetDialogOpen}>
               <DialogTrigger 
                 render={
-                  <Button className="btn-primary h-12 px-8 rounded-xl font-bold" onClick={() => setEditingBudget(undefined)}>
+                  <Button className="h-12 px-8 rounded-xl font-bold" onClick={() => setEditingBudget(undefined)}>
                     <Plus className="mr-2 h-5 w-5" /> Novo Orçamento
                   </Button>
                 }
@@ -267,19 +248,19 @@ export default function App() {
 
       {/* Mobile Bottom Nav */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2 z-20">
-        <Button variant="ghost" className="flex flex-col h-auto gap-1" onClick={() => document.querySelector('[value="dashboard"]')?.dispatchEvent(new MouseEvent('click', {bubbles: true}))}>
+        <Button variant="ghost" className={cn("flex flex-col h-auto gap-1", activeTab === 'dashboard' && "text-amber-600")} onClick={() => setActiveTab('dashboard')}>
           <LayoutDashboard className="h-5 w-5" />
           <span className="text-[10px]">Painel</span>
         </Button>
-        <Button variant="ghost" className="flex flex-col h-auto gap-1" onClick={() => document.querySelector('[value="budgets"]')?.dispatchEvent(new MouseEvent('click', {bubbles: true}))}>
+        <Button variant="ghost" className={cn("flex flex-col h-auto gap-1", activeTab === 'budgets' && "text-amber-600")} onClick={() => setActiveTab('budgets')}>
           <FileText className="h-5 w-5" />
           <span className="text-[10px]">Orçamentos</span>
         </Button>
-        <Button variant="ghost" className="flex flex-col h-auto gap-1" onClick={() => document.querySelector('[value="finance"]')?.dispatchEvent(new MouseEvent('click', {bubbles: true}))}>
+        <Button variant="ghost" className={cn("flex flex-col h-auto gap-1", activeTab === 'finance' && "text-amber-600")} onClick={() => setActiveTab('finance')}>
           <Wallet className="h-5 w-5" />
           <span className="text-[10px]">Financeiro</span>
         </Button>
-        <Button variant="ghost" className="flex flex-col h-auto gap-1" onClick={() => document.querySelector('[value="profile"]')?.dispatchEvent(new MouseEvent('click', {bubbles: true}))}>
+        <Button variant="ghost" className={cn("flex flex-col h-auto gap-1", activeTab === 'profile' && "text-amber-600")} onClick={() => setActiveTab('profile')}>
           <UserIcon className="h-5 w-5" />
           <span className="text-[10px]">Perfil</span>
         </Button>

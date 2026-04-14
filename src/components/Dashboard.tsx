@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
-import { Budget, Transaction } from '../types';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Budget, Transaction } from '@/types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, FileText } from 'lucide-react';
 

@@ -1,12 +1,12 @@
 import React from 'react';
-import { Budget, UserProfile } from '../types';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
+import { Budget, UserProfile } from '@/types';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { FileDown, Receipt, Edit, Trash2 } from 'lucide-react';
-import { generateBudgetPDF, generateReceiptPDF } from '../lib/pdf';
+import { generateBudgetPDF, generateReceiptPDF } from '@/lib/pdf';
 import { format } from 'date-fns';
-import { db } from '../firebase';
+import { db } from '@/firebase';
 import { deleteDoc, doc, updateDoc } from 'firebase/firestore';
 
 interface BudgetListProps {
@@ -17,9 +17,7 @@ interface BudgetListProps {
 
 export default function BudgetList({ budgets, userProfile, onEdit }: BudgetListProps) {
   const handleDelete = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este orçamento?')) {
-      await deleteDoc(doc(db, 'budgets', id));
-    }
+    await deleteDoc(doc(db, 'budgets', id));
   };
 
   const updateStatus = async (id: string, status: Budget['status']) => {
@@ -37,7 +35,7 @@ export default function BudgetList({ budgets, userProfile, onEdit }: BudgetListP
   };
 
   return (
-    <div className="rounded-md border">
+    <div className="overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>

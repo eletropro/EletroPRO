@@ -61,30 +61,34 @@ export const generateBudgetPDF = (budget: Budget, userProfile: UserProfile) => {
   const tableData = budget.items.map(item => [
     item.description,
     item.quantity.toString(),
+    item.unit || 'un',
     `R$ ${item.unitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+    item.marketPrice ? `R$ ${item.marketPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-',
     `R$ ${item.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
   ]);
 
   doc.autoTable({
     startY: 85,
-    head: [['DESCRIÇÃO DOS SERVIÇOS', 'QTD', 'UNITÁRIO', 'TOTAL']],
+    head: [['DESCRIÇÃO DOS SERVIÇOS', 'QTD', 'UNID', 'UNITÁRIO', 'REF. MERCADO', 'TOTAL']],
     body: tableData,
     theme: 'grid',
     headStyles: { 
       fillColor: [30, 41, 59], 
       textColor: [255, 255, 255],
-      fontSize: 9,
+      fontSize: 8,
       fontStyle: 'bold',
       halign: 'center'
     },
     columnStyles: {
       0: { cellWidth: 'auto' },
-      1: { halign: 'center', cellWidth: 20 },
-      2: { halign: 'right', cellWidth: 35 },
-      3: { halign: 'right', cellWidth: 35 }
+      1: { halign: 'center', cellWidth: 15 },
+      2: { halign: 'center', cellWidth: 15 },
+      3: { halign: 'right', cellWidth: 25 },
+      4: { halign: 'right', cellWidth: 25 },
+      5: { halign: 'right', cellWidth: 25 }
     },
-    styles: { fontSize: 9, cellPadding: 5 },
-    foot: [['', '', 'VALOR TOTAL:', `R$ ${budget.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`]],
+    styles: { fontSize: 8, cellPadding: 4 },
+    foot: [['', '', '', '', 'VALOR TOTAL:', `R$ ${budget.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`]],
     footStyles: { 
       fillColor: [241, 245, 249], 
       textColor: [15, 23, 42], 
