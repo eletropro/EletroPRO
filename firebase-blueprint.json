@@ -1,0 +1,92 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and settings",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "businessName": { "type": "string" },
+        "businessPhone": { "type": "string" },
+        "businessAddress": { "type": "string" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Client": {
+      "title": "Client",
+      "description": "Customer contact information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "email": { "type": "string" },
+        "notes": { "type": "string" }
+      },
+      "required": ["userId", "name"]
+    },
+    "Budget": {
+      "title": "Budget",
+      "description": "Electrical service budget",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "clientPhone": { "type": "string" },
+        "clientAddress": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "description": { "type": "string" },
+              "quantity": { "type": "number" },
+              "unitPrice": { "type": "number" },
+              "total": { "type": "number" }
+            }
+          }
+        },
+        "totalAmount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "approved", "completed", "cancelled"] },
+        "notes": { "type": "string" }
+      },
+      "required": ["userId", "clientName", "totalAmount", "status"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Financial transaction for personal/business control",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["income", "expense"] },
+        "category": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "description": { "type": "string" },
+        "budgetId": { "type": "string" }
+      },
+      "required": ["userId", "type", "amount", "date"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile data"
+    },
+    "/budgets/{budgetId}": {
+      "schema": "Budget",
+      "description": "Budget documents"
+    },
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Financial transactions"
+    }
+  }
+}
