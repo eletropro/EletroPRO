@@ -154,9 +154,33 @@ export default function App() {
   if (!user) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
-        {/* Background Glows */}
-        <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-primary/10 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-primary/5 blur-[120px] rounded-full" />
+        {/* Background Floating Blobs */}
+        <motion.div 
+          animate={{ 
+            x: [0, 100, 0],
+            y: [0, 50, 0],
+            scale: [1, 1.2, 1]
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-primary/10 blur-[120px] rounded-full" 
+        />
+        <motion.div 
+          animate={{ 
+            x: [0, -80, 0],
+            y: [0, -100, 0],
+            scale: [1, 1.1, 1]
+          }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-primary/5 blur-[120px] rounded-full" 
+        />
+        <motion.div 
+          animate={{ 
+            x: [0, 50, 0],
+            y: [0, -50, 0],
+          }}
+          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+          className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-primary/5 blur-[100px] rounded-full" 
+        />
 
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
@@ -256,8 +280,19 @@ export default function App() {
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     className="absolute left-0 mt-3 w-80 bg-background border border-border rounded-[2rem] shadow-2xl z-50 overflow-hidden"
                   >
-                    <div className="p-5 border-b border-border bg-accent/10">
+                    <div className="p-5 border-b border-border bg-accent/10 flex items-center justify-between">
                       <h3 className="font-heading font-bold">Notificações</h3>
+                      {notifications.length > 0 && (
+                        <button 
+                          onClick={() => {
+                            notifications.forEach(n => dismissNotification(n.budgetId));
+                            setIsNotificationOpen(false);
+                          }}
+                          className="text-[10px] uppercase font-bold text-primary hover:underline"
+                        >
+                          Limpar Tudo
+                        </button>
+                      )}
                     </div>
                     <div className="max-h-96 overflow-y-auto custom-scrollbar">
                       {notifications.length === 0 ? (
@@ -374,8 +409,19 @@ export default function App() {
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     className="absolute right-0 mt-3 w-80 bg-background border border-border rounded-[2rem] shadow-2xl z-50 overflow-hidden"
                   >
-                    <div className="p-5 border-b border-border bg-accent/10">
+                    <div className="p-5 border-b border-border bg-accent/10 flex items-center justify-between">
                       <h3 className="font-heading font-bold">Notificações</h3>
+                      {notifications.length > 0 && (
+                        <button 
+                          onClick={() => {
+                            notifications.forEach(n => dismissNotification(n.budgetId));
+                            setIsNotificationOpen(false);
+                          }}
+                          className="text-[10px] uppercase font-bold text-primary hover:underline"
+                        >
+                          Limpar Tudo
+                        </button>
+                      )}
                     </div>
                     <div className="max-h-96 overflow-y-auto custom-scrollbar">
                       {notifications.length === 0 ? (
