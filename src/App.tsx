@@ -7,7 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/tabs';
 import { Button } from './components/ui/button';
 import { Input } from './components/ui/input';
 import { Label } from './components/ui/label';
-import { LayoutDashboard, Users, FileText, Wallet, UserCircle, LogOut, Zap, Plus, Menu, X, Bell, Mail, Lock } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Wallet, UserCircle, LogOut, Zap, Plus, Menu, X, Bell, Mail, Lock, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 // Components
@@ -38,6 +38,32 @@ export default function App() {
   const [authMode, setAuthMode] = useState<'login' | 'signup' | 'reset'>('login');
   const [authError, setAuthError] = useState('');
   const [authSuccess, setAuthSuccess] = useState('');
+
+  // PWA Install State
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallBanner(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+      setShowInstallBanner(false);
+    }
+  };
 
   useEffect(() => {
     if (!user || budgets.length === 0) return;
@@ -371,6 +397,45 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row selection:bg-primary/30">
+      {/* PWA Install Banner */}
+      <AnimatePresence>
+        {showInstallBanner && (
+          <motion.div 
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-3rem)] max-w-md"
+          >
+            <div className="glass-orange p-4 rounded-2xl shadow-2xl border-primary/20 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/20 rounded-xl text-primary">
+                  <Zap size={20} fill="currentColor" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold">Instalar EletroPRO</p>
+                  <p className="text-[10px] text-muted-foreground">Acesse como um aplicativo nativo!</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  size="sm" 
+                  onClick={handleInstallClick}
+                  className="h-9 px-4 rounded-xl font-bold text-xs"
+                >
+                  Instalar
+                </Button>
+                <button 
+                  onClick={() => setShowInstallBanner(false)}
+                  className="p-2 text-muted-foreground hover:text-foreground"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-80 border-r border-border p-8 space-y-10 sticky top-0 h-screen bg-background/80 backdrop-blur-2xl z-30">
         <div className="flex items-center justify-between px-2">

@@ -1,0 +1,17 @@
+{
+  "name": "EletroPRO",
+  "short_name": "EletroPRO",
+  "description": "Sistema de Gestão para Eletricistas",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#f59e0b",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/616/616494.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
