@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { UserProfile, Budget, Transaction, Client } from './types';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/tabs';
 import { Button } from './components/ui/button';
-import { LayoutDashboard, Users, FileText, Wallet, UserCircle, LogOut, Zap, Plus, Menu, X, Bell } from 'lucide-react';
+import { Input } from './components/ui/input';
+import { Label } from './components/ui/label';
+import { LayoutDashboard, Users, FileText, Wallet, UserCircle, LogOut, Zap, Plus, Menu, X, Bell, Mail, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 // Components
@@ -29,6 +31,13 @@ export default function App() {
   const [clients, setClients] = useState<Client[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+
+  // Email Auth State
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [authMode, setAuthMode] = useState<'login' | 'signup' | 'reset'>('login');
+  const [authError, setAuthError] = useState('');
+  const [authSuccess, setAuthSuccess] = useState('');
 
   useEffect(() => {
     if (!user || budgets.length === 0) return;
@@ -135,6 +144,30 @@ export default function App() {
     }
   };
 
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthSuccess('');
+    try {
+      if (authMode === 'login') {
+        await signInWithEmailAndPassword(auth, email, password);
+      } else if (authMode === 'signup') {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        await sendPasswordResetEmail(auth, email);
+        setAuthSuccess('Email de recuperação enviado! Verifique sua caixa de entrada.');
+        setTimeout(() => setAuthMode('login'), 5000);
+      }
+    } catch (error: any) {
+      console.error("Auth error:", error);
+      let message = error.message;
+      if (error.code === 'auth/user-not-found') message = 'Usuário não encontrado.';
+      if (error.code === 'auth/wrong-password') message = 'Senha incorreta.';
+      if (error.code === 'auth/invalid-email') message = 'Email inválido.';
+      setAuthError(message);
+    }
+  };
+
   const handleLogout = () => signOut(auth);
 
   if (loading) {
@@ -185,42 +218,143 @@ export default function App() {
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center space-y-12 z-10 max-w-2xl"
+          className="text-center space-y-8 z-10 w-full max-w-md"
         >
-          <div className="relative inline-block">
+          <div className="relative inline-block w-full">
             <motion.div 
-              animate={{ y: [0, -20, 0] }}
+              animate={{ y: [0, -10, 0] }}
               transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-              className="glass-orange p-10 rounded-[3rem] shadow-2xl shadow-primary/30 relative z-20 border-primary/20"
+              className="glass-orange p-8 rounded-[2.5rem] shadow-2xl shadow-primary/30 relative z-20 border-primary/20"
             >
-              <Zap size={72} className="text-primary mx-auto mb-6" fill="currentColor" />
-              <h1 className="text-6xl font-heading font-bold tracking-tighter">
+              <Zap size={48} className="text-primary mx-auto mb-4" fill="currentColor" />
+              <h1 className="text-4xl font-heading font-bold tracking-tighter mb-8">
                 Eletro<span className="text-primary">PRO</span>
               </h1>
+
+              <form onSubmit={handleEmailAuth} className="space-y-4 text-left">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10 h-12 bg-background/50 border-border/50"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {authMode !== 'reset' && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password">Senha</Label>
+                      {authMode === 'login' && (
+                        <button 
+                          type="button"
+                          onClick={() => setAuthMode('reset')}
+                          className="text-[10px] uppercase font-bold text-primary hover:underline"
+                        >
+                          Esqueceu a senha?
+                        </button>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10 h-12 bg-background/50 border-border/50"
+                        required={authMode !== 'reset'}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {authError && (
+                  <p className="text-xs text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20">
+                    {authError}
+                  </p>
+                )}
+
+                {authSuccess && (
+                  <p className="text-xs text-emerald-500 bg-emerald-500/10 p-3 rounded-lg border border-emerald-500/20">
+                    {authSuccess}
+                  </p>
+                )}
+
+                <Button type="submit" className="w-full h-12 text-base font-bold rounded-xl shadow-lg shadow-primary/20">
+                  {authMode === 'login' ? 'Entrar' : authMode === 'signup' ? 'Criar Conta' : 'Enviar Email de Recuperação'}
+                </Button>
+
+                {authMode === 'reset' && (
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode('login')}
+                    className="w-full text-center text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    Voltar para o Login
+                  </button>
+                )}
+
+                {authMode !== 'reset' && (
+                  <>
+                    <div className="flex items-center gap-4 my-6">
+                      <div className="h-px flex-1 bg-border/50" />
+                      <span className="text-xs text-muted-foreground uppercase font-bold">ou</span>
+                      <div className="h-px flex-1 bg-border/50" />
+                    </div>
+
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      onClick={handleLogin}
+                      className="w-full h-12 rounded-xl border-border/50 hover:bg-accent/50 flex items-center justify-center gap-3"
+                    >
+                      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
+                      Continuar com Google
+                    </Button>
+
+                    <p className="text-sm text-muted-foreground mt-6 text-center">
+                      {authMode === 'login' ? 'Não tem uma conta?' : 'Já tem uma conta?'}
+                      <button
+                        type="button"
+                        onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+                        className="ml-2 text-primary font-bold hover:underline"
+                      >
+                        {authMode === 'login' ? 'Cadastre-se' : 'Faça Login'}
+                      </button>
+                    </p>
+                  </>
+                )}
+              </form>
             </motion.div>
-            <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full -z-10 animate-pulse-subtle" />
           </div>
 
-          <div className="space-y-6">
-            <h2 className="text-4xl font-heading font-bold text-foreground leading-tight">
-              A nova era da gestão para <span className="text-primary">Eletricistas</span>
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-lg mx-auto leading-relaxed">
-              Simplifique seus orçamentos, domine suas finanças e encante seus clientes com profissionalismo.
+          <div className="space-y-4">
+            <p className="text-muted-foreground text-lg font-medium">
+              A ferramenta definitiva para o eletricista moderno.
             </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Button 
-              size="lg" 
-              onClick={handleLogin}
-              className="h-16 px-10 text-xl rounded-2xl shadow-2xl shadow-primary/40 hover:scale-105 transition-all bg-primary hover:bg-primary/90"
-            >
-              Entrar com Google
-            </Button>
-            <p className="text-sm text-muted-foreground sm:max-w-[200px] text-center sm:text-left">
-              Acesso seguro e instantâneo. Sem formulários chatos.
-            </p>
+            <div className="flex justify-center gap-8 text-muted-foreground/50">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                <span className="text-sm font-bold">Orçamentos</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                <span className="text-sm font-bold">Recibos</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                <span className="text-sm font-bold">Financeiro</span>
+              </div>
+            </div>
           </div>
         </motion.div>
       </div>

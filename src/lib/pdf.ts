@@ -30,11 +30,19 @@ export const generateBudgetPDF = (budget: Budget, userProfile: UserProfile) => {
   doc.text('SISTEMA DE GESTÃO ELÉTRICA', 14, 32);
 
   // Budget Info (Right side)
+  const statusMap: Record<string, string> = {
+    'pending': 'PENDENTE',
+    'approved': 'APROVADO',
+    'completed': 'CONCLUÍDO',
+    'cancelled': 'CANCELADO'
+  };
+
   doc.setFontSize(10);
   doc.setTextColor(71, 85, 105);
-  doc.text(`ORÇAMENTO: #${budget.id.slice(0, 8).toUpperCase()}`, pageWidth - 14, 20, { align: 'right' });
+  const budgetDisplayId = budget.budgetNumber ? budget.budgetNumber.toString().padStart(4, '0') : budget.id.slice(0, 8).toUpperCase();
+  doc.text(`ORÇAMENTO: #${budgetDisplayId}`, pageWidth - 14, 20, { align: 'right' });
   doc.text(`DATA: ${format(new Date(budget.date), 'dd/MM/yyyy', { locale: ptBR })}`, pageWidth - 14, 26, { align: 'right' });
-  doc.text(`STATUS: ${budget.status.toUpperCase()}`, pageWidth - 14, 32, { align: 'right' });
+  doc.text(`STATUS: ${statusMap[budget.status] || budget.status.toUpperCase()}`, pageWidth - 14, 32, { align: 'right' });
 
   // Business Info
   doc.setFontSize(11);
@@ -150,7 +158,8 @@ export const generateReceiptPDF = (budget: Budget, userProfile: UserProfile) => 
   doc.setTextColor(71, 85, 105);
   doc.setFont('helvetica', 'normal');
   
-  const text = `Recebi(emos) de ${budget.clientName.toUpperCase()} a importância de R$ ${budget.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} referente aos serviços elétricos detalhados no orçamento #${budget.id.slice(0, 8).toUpperCase()}.`;
+  const budgetDisplayId = budget.budgetNumber ? budget.budgetNumber.toString().padStart(4, '0') : budget.id.slice(0, 8).toUpperCase();
+  const text = `Recebi(emos) de ${budget.clientName.toUpperCase()} a importância de R$ ${budget.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} referente aos serviços elétricos detalhados no orçamento #${budgetDisplayId}.`;
   const splitText = doc.splitTextToSize(text, pageWidth - 40);
   doc.text(splitText, 20, 75);
 

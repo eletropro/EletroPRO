@@ -68,7 +68,14 @@ export default function BudgetList({ budgets, userProfile, onEdit }: BudgetListP
                       <status.icon size={24} />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold tracking-tight">{budget.clientName}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xl font-bold tracking-tight">{budget.clientName}</h3>
+                        {budget.budgetNumber && (
+                          <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-md font-bold">
+                            #{budget.budgetNumber.toString().padStart(4, '0')}
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                         <Calendar size={14} />
                         <span>{format(new Date(budget.date), "dd 'de' MMMM", { locale: ptBR })}</span>

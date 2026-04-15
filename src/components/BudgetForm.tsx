@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { db, auth } from '../firebase';
-import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, serverTimestamp, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { Budget, BudgetItem, Client } from '../types';
 import { BRASILIA_PRICES } from '../constants';
 import { Button } from './ui/button';
@@ -72,7 +72,7 @@ export default function BudgetForm({ budget, clients, onSuccess, onClose }: Budg
     e.preventDefault();
     if (!auth.currentUser) return;
 
-    const budgetData = {
+    const budgetData: any = {
       userId: auth.currentUser.uid,
       clientName,
       clientPhone,
@@ -89,6 +89,20 @@ export default function BudgetForm({ budget, clients, onSuccess, onClose }: Budg
       if (budget?.id) {
         await updateDoc(doc(db, 'budgets', budget.id), budgetData);
       } else {
+        // Get the next budget number
+        const q = query(
+          collection(db, 'budgets'),
+          where('userId', '==', auth.currentUser.uid),
+          orderBy('budgetNumber', 'desc'),
+          limit(1)
+        );
+        const querySnapshot = await getDocs(q);
+        let nextNumber = 1;
+        if (!querySnapshot.empty) {
+          const lastBudget = querySnapshot.docs[0].data() as Budget;
+          nextNumber = (lastBudget.budgetNumber || 0) + 1;
+        }
+        budgetData.budgetNumber = nextNumber;
         await addDoc(collection(db, 'budgets'), budgetData);
       }
       onSuccess();

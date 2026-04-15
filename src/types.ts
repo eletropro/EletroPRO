@@ -30,6 +30,7 @@ export interface BudgetItem {
 export interface Budget {
   id: string;
   userId: string;
+  budgetNumber?: number;
   clientName: string;
   clientPhone?: string;
   clientAddress?: string;
