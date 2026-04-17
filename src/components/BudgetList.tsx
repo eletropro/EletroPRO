@@ -42,8 +42,15 @@ export default function BudgetList({ budgets, userProfile, onEdit }: BudgetListP
     }
   };
 
-  const updateStatus = async (id: string, status: Budget['status']) => {
-    await updateDoc(doc(db, 'budgets', id), { status });
+  const safeFormatDate = (dateStr: string) => {
+    try {
+      if (!dateStr) return 'Data N/D';
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return 'Data Inválida';
+      return format(d, "dd 'de' MMMM", { locale: ptBR });
+    } catch (e) {
+      return 'Erro na data';
+    }
   };
 
   const statusConfig = {
@@ -98,7 +105,7 @@ export default function BudgetList({ budgets, userProfile, onEdit }: BudgetListP
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                         <Calendar size={14} />
-                        <span>{format(new Date(budget.date), "dd 'de' MMMM", { locale: ptBR })}</span>
+                        <span>{safeFormatDate(budget.date)}</span>
                       </div>
                     </div>
                   </div>
@@ -170,30 +177,32 @@ export default function BudgetList({ budgets, userProfile, onEdit }: BudgetListP
       </AnimatePresence>
 
       <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Gerar Recibo</DialogTitle>
-          </DialogHeader>
-          <div className="py-6 space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Confirme ou altere o valor recebido para o recibo de <strong>{selectedBudget?.clientName}</strong>.
-            </p>
-            <div className="space-y-2">
-              <Label htmlFor="amount">Valor Recebido (R$)</Label>
-              <Input 
-                id="amount"
-                type="number"
-                value={receiptAmount}
-                onChange={(e) => setReceiptAmount(e.target.value)}
-                autoFocus
-              />
+        {selectedBudget && (
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Gerar Recibo</DialogTitle>
+            </DialogHeader>
+            <div className="py-6 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Confirme ou altere o valor recebido para o recibo de <strong>{selectedBudget.clientName}</strong>.
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="amount">Valor Recebido (R$)</Label>
+                <Input 
+                  id="amount"
+                  type="number"
+                  value={receiptAmount}
+                  onChange={(e) => setReceiptAmount(e.target.value)}
+                  autoFocus
+                />
+              </div>
             </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsReceiptDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={confirmReceipt}>Gerar PDF do Recibo</Button>
-          </DialogFooter>
-        </DialogContent>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsReceiptDialogOpen(false)}>Cancelar</Button>
+              <Button onClick={confirmReceipt}>Gerar PDF do Recibo</Button>
+            </DialogFooter>
+          </DialogContent>
+        )}
       </Dialog>
     </div>
   );
