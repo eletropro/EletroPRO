@@ -10,7 +10,7 @@ import { TRANSACTION_CATEGORIES } from '../constants';
 import { Plus, Trash2, ArrowUpRight, ArrowDownRight, Wallet, Calendar, Tag, FileText, Zap } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface TransactionListProps {
   transactions: Transaction[];

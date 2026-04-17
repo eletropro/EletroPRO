@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EletroPRO - Gestão para Eletricistas</title>
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#f59e0b" />
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/616/616494.png" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <meta name="theme-color" content="#F97316" />
+    <link rel="apple-touch-icon" href="/logo.svg" />
     <script>
-      if ('serviceWorker' in navigator) {
+      // Only register Service Worker if we are not in an iframe
+      if (window.self === window.top && 'serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js').then(reg => {
             console.log('SW registered:', reg);

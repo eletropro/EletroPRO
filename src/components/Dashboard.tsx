@@ -3,7 +3,7 @@ import { Budget, Transaction } from '../types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, FileText, Zap, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 
 interface DashboardProps {
   budgets: Budget[];

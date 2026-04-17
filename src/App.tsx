@@ -8,7 +8,7 @@ import { Button } from './components/ui/button';
 import { Input } from './components/ui/input';
 import { Label } from './components/ui/label';
 import { LayoutDashboard, Users, FileText, Wallet, UserCircle, LogOut, Zap, Plus, Menu, X, Bell, Mail, Lock, Download } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Components
 import Dashboard from './components/Dashboard';

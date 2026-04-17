@@ -7,7 +7,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { UserCircle, Building2, Phone, MapPin, Save, Zap, Fingerprint } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 
 interface UserProfileFormProps {
   profile: UserProfile;
