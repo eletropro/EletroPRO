@@ -1,13 +1,16 @@
 import React from 'react';
 import { Budget, UserProfile } from '../types';
 import { Button } from './ui/button';
-import { FileDown, Receipt, Edit, Trash2, Calendar, User, DollarSign, CheckCircle2, Clock, XCircle, MoreVertical, FileText } from 'lucide-react';
-import { generateBudgetPDF, generateReceiptPDF } from '../lib/pdf';
+import { FileDown, Receipt, Edit, Trash2, Calendar, User, DollarSign, CheckCircle2, Clock, XCircle, MoreVertical, FileText, ScrollText } from 'lucide-react';
+import { generateBudgetPDF, generateReceiptPDF, generateContractPDF } from '../lib/pdf';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { db } from '../firebase';
 import { deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 
 interface BudgetListProps {
   budgets: Budget[];
@@ -16,9 +19,26 @@ interface BudgetListProps {
 }
 
 export default function BudgetList({ budgets, userProfile, onEdit }: BudgetListProps) {
+  const [isReceiptDialogOpen, setIsReceiptDialogOpen] = React.useState(false);
+  const [receiptAmount, setReceiptAmount] = React.useState('');
+  const [selectedBudget, setSelectedBudget] = React.useState<Budget | null>(null);
+
   const handleDelete = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir este orçamento?')) {
       await deleteDoc(doc(db, 'budgets', id));
+    }
+  };
+
+  const handleReceiptClick = (budget: Budget) => {
+    setSelectedBudget(budget);
+    setReceiptAmount(budget.totalAmount.toString());
+    setIsReceiptDialogOpen(true);
+  };
+
+  const confirmReceipt = () => {
+    if (selectedBudget) {
+      generateReceiptPDF(selectedBudget, userProfile, Number(receiptAmount));
+      setIsReceiptDialogOpen(false);
     }
   };
 
@@ -101,15 +121,24 @@ export default function BudgetList({ budgets, userProfile, onEdit }: BudgetListP
                       size="icon" 
                       onClick={() => generateBudgetPDF(budget, userProfile)}
                       className="rounded-xl hover:bg-primary/10 hover:text-primary"
-                      title="Baixar PDF"
+                      title="Baixar PDF Orçamento"
                     >
                       <FileDown size={20} />
                     </Button>
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      onClick={() => generateReceiptPDF(budget, userProfile)}
-                      className="rounded-xl hover:bg-primary/10 hover:text-primary"
+                      onClick={() => generateContractPDF(budget, userProfile)}
+                      className="rounded-xl hover:bg-primary/10 hover:text-blue-500"
+                      title="Gerar Contrato"
+                    >
+                      <ScrollText size={20} />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => handleReceiptClick(budget)}
+                      className="rounded-xl hover:bg-primary/10 hover:text-emerald-500"
                       title="Gerar Recibo"
                     >
                       <Receipt size={20} />
@@ -139,6 +168,33 @@ export default function BudgetList({ budgets, userProfile, onEdit }: BudgetListP
           );
         })}
       </AnimatePresence>
+
+      <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Gerar Recibo</DialogTitle>
+          </DialogHeader>
+          <div className="py-6 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Confirme ou altere o valor recebido para o recibo de <strong>{selectedBudget?.clientName}</strong>.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="amount">Valor Recebido (R$)</Label>
+              <Input 
+                id="amount"
+                type="number"
+                value={receiptAmount}
+                onChange={(e) => setReceiptAmount(e.target.value)}
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsReceiptDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={confirmReceipt}>Gerar PDF do Recibo</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -51,15 +51,15 @@ export default function BudgetForm({ budget, clients, onSuccess, onClose }: Budg
     setItems(items.filter((_, i) => i !== index));
   };
 
-  const updateItem = (index: number, field: keyof BudgetItem, value: string | number) => {
+  const updateItem = (index: number, field: keyof BudgetItem, value: string) => {
     const newItems = [...items];
     const item = { ...newItems[index] };
     
-    if (field === 'quantity') item.quantity = Number(value);
-    if (field === 'unitPrice') item.unitPrice = Number(value);
-    if (field === 'marketPrice') item.marketPrice = Number(value);
-    if (field === 'description') item.description = String(value);
-    if (field === 'unit') item.unit = String(value);
+    if (field === 'quantity') item.quantity = value === '' ? 0 : Number(value);
+    if (field === 'unitPrice') item.unitPrice = value === '' ? 0 : Number(value);
+    if (field === 'marketPrice') item.marketPrice = value === '' ? 0 : Number(value);
+    if (field === 'description') item.description = value;
+    if (field === 'unit') item.unit = value;
     
     item.total = item.quantity * item.unitPrice;
     newItems[index] = item;
@@ -234,24 +234,43 @@ export default function BudgetForm({ budget, clients, onSuccess, onClose }: Budg
                 >
                   <div className="flex-1 space-y-2">
                     <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Descrição do Serviço</Label>
-                    <Input value={item.description} onChange={e => updateItem(index, 'description', e.target.value)} className="h-12 rounded-xl bg-background border-border/50" />
+                    <Input 
+                      placeholder="Ex: Instalação de chuveiro elétrico..."
+                      value={item.description} 
+                      onChange={e => updateItem(index, 'description', e.target.value)} 
+                      className="h-12 rounded-xl bg-background border-border/50 focus:border-primary/50 transition-colors" 
+                    />
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="space-y-2">
                       <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Qtd</Label>
-                      <Input type="number" value={item.quantity} onChange={e => updateItem(index, 'quantity', e.target.value)} className="h-12 rounded-xl bg-background border-border/50" />
+                      <Input 
+                        type="number" 
+                        value={item.quantity === 0 ? '' : item.quantity} 
+                        onChange={e => updateItem(index, 'quantity', e.target.value)} 
+                        className="h-12 rounded-xl bg-background border-border/50" 
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Unid</Label>
-                      <Input value={item.unit} onChange={e => updateItem(index, 'unit', e.target.value)} className="h-12 rounded-xl bg-background border-border/50" />
+                      <Input 
+                        value={item.unit} 
+                        onChange={e => updateItem(index, 'unit', e.target.value)} 
+                        className="h-12 rounded-xl bg-background border-border/50" 
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Unitário</Label>
-                      <Input type="number" value={item.unitPrice} onChange={e => updateItem(index, 'unitPrice', e.target.value)} className="h-12 rounded-xl bg-background border-border/50" />
+                      <Input 
+                        type="number" 
+                        value={item.unitPrice === 0 ? '' : item.unitPrice} 
+                        onChange={e => updateItem(index, 'unitPrice', e.target.value)} 
+                        className="h-12 rounded-xl bg-background border-border/50" 
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Total</Label>
-                      <div className="h-12 flex items-center px-4 rounded-xl bg-primary/10 text-primary font-bold">
+                      <div className="h-12 flex items-center px-4 rounded-xl bg-primary/10 text-primary font-bold border border-primary/20">
                         R$ {item.total.toFixed(2)}
                       </div>
                     </div>

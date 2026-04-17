@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { UserCircle, Building2, Phone, MapPin, Save, Zap } from 'lucide-react';
+import { UserCircle, Building2, Phone, MapPin, Save, Zap, Fingerprint } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface UserProfileFormProps {
@@ -17,6 +17,7 @@ export default function UserProfileForm({ profile }: UserProfileFormProps) {
   const [businessName, setBusinessName] = useState(profile.businessName || '');
   const [businessPhone, setBusinessPhone] = useState(profile.businessPhone || '');
   const [businessAddress, setBusinessAddress] = useState(profile.businessAddress || '');
+  const [businessCpfCnpj, setBusinessCpfCnpj] = useState(profile.businessCpfCnpj || '');
   const [displayName, setDisplayName] = useState(profile.displayName || '');
 
   const handleSave = async (e: React.FormEvent) => {
@@ -27,6 +28,7 @@ export default function UserProfileForm({ profile }: UserProfileFormProps) {
         businessName,
         businessPhone,
         businessAddress,
+        businessCpfCnpj,
         displayName
       });
       alert('Perfil atualizado com sucesso!');
@@ -99,6 +101,18 @@ export default function UserProfileForm({ profile }: UserProfileFormProps) {
                 <Input 
                   value={businessAddress} 
                   onChange={e => setBusinessAddress(e.target.value)} 
+                  className="h-14 rounded-2xl bg-background border-border/50 focus:ring-primary text-lg"
+                />
+              </div>
+              <div className="space-y-3">
+                <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest flex items-center gap-2">
+                  <Fingerprint size={14} className="text-primary" />
+                  Seu CPF ou CNPJ
+                </Label>
+                <Input 
+                  value={businessCpfCnpj} 
+                  onChange={e => setBusinessCpfCnpj(e.target.value)} 
+                  placeholder="000.000.000-00"
                   className="h-14 rounded-2xl bg-background border-border/50 focus:ring-primary text-lg"
                 />
               </div>

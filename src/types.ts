@@ -6,6 +6,7 @@ export interface UserProfile {
   businessName?: string;
   businessPhone?: string;
   businessAddress?: string;
+  businessCpfCnpj?: string;
 }
 
 export interface Client {
