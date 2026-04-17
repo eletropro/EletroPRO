@@ -55,9 +55,9 @@ export default function BudgetForm({ budget, clients, onSuccess, onClose }: Budg
     const newItems = [...items];
     const item = { ...newItems[index] };
     
-    if (field === 'quantity') item.quantity = value === '' ? 0 : Number(value);
-    if (field === 'unitPrice') item.unitPrice = value === '' ? 0 : Number(value);
-    if (field === 'marketPrice') item.marketPrice = value === '' ? 0 : Number(value);
+    if (field === 'quantity') item.quantity = value === '' ? 0 : parseFloat(value) || 0;
+    if (field === 'unitPrice') item.unitPrice = value === '' ? 0 : parseFloat(value) || 0;
+    if (field === 'marketPrice') item.marketPrice = value === '' ? 0 : parseFloat(value) || 0;
     if (field === 'description') item.description = value;
     if (field === 'unit') item.unit = value;
     
@@ -233,12 +233,13 @@ export default function BudgetForm({ budget, clients, onSuccess, onClose }: Budg
                   className="flex flex-col lg:flex-row gap-4 p-6 rounded-3xl bg-accent/20 border border-border/50 relative group"
                 >
                   <div className="flex-1 space-y-2">
-                    <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Descrição do Serviço</Label>
-                    <Input 
-                      placeholder="Ex: Instalação de chuveiro elétrico..."
+                    <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Descrição do Serviço / Material</Label>
+                    <textarea 
+                      placeholder="Descreva detalhadamente o serviço ou material..."
                       value={item.description} 
                       onChange={e => updateItem(index, 'description', e.target.value)} 
-                      className="h-12 rounded-xl bg-background border-border/50 focus:border-primary/50 transition-colors" 
+                      className="w-full min-h-[50px] p-3 rounded-xl bg-background border border-border/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all text-sm resize-none"
+                      rows={1}
                     />
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -291,8 +292,13 @@ export default function BudgetForm({ budget, clients, onSuccess, onClose }: Budg
         {/* Footer Section */}
         <div className="pt-8 border-t border-border flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
           <div className="flex-1 w-full space-y-2">
-            <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Observações Adicionais</Label>
-            <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Ex: Garantia de 90 dias, validade do orçamento..." className="h-14 rounded-2xl bg-accent/20 border-border/50" />
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Observações Adicionais / Condições de Pagamento</Label>
+            <textarea 
+              value={notes} 
+              onChange={e => setNotes(e.target.value)} 
+              placeholder="Ex: Garantia de 90 dias, validade do orçamento, formas de parcelamento..." 
+              className="w-full h-24 p-4 rounded-2xl bg-accent/20 border border-border/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all resize-none"
+            />
           </div>
           <div className="flex flex-col items-end gap-4 min-w-[240px]">
             <div className="text-right">

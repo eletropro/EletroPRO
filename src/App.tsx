@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { UserProfile, Budget, Transaction, Client } from './types';
@@ -162,14 +162,6 @@ export default function App() {
     };
   }, [user]);
 
-  const handleLogin = async () => {
-    try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
-    } catch (error) {
-      console.error("Login error:", error);
-    }
-  };
-
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
@@ -330,34 +322,16 @@ export default function App() {
                 )}
 
                 {authMode !== 'reset' && (
-                  <>
-                    <div className="flex items-center gap-4 my-6">
-                      <div className="h-px flex-1 bg-border/50" />
-                      <span className="text-xs text-muted-foreground uppercase font-bold">ou</span>
-                      <div className="h-px flex-1 bg-border/50" />
-                    </div>
-
-                    <Button 
+                  <p className="text-sm text-muted-foreground mt-6 text-center">
+                    {authMode === 'login' ? 'Não tem uma conta?' : 'Já tem uma conta?'}
+                    <button
                       type="button"
-                      variant="outline" 
-                      onClick={handleLogin}
-                      className="w-full h-12 rounded-xl border-border/50 hover:bg-accent/50 flex items-center justify-center gap-3"
+                      onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+                      className="ml-2 text-primary font-bold hover:underline"
                     >
-                      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
-                      Continuar com Google
-                    </Button>
-
-                    <p className="text-sm text-muted-foreground mt-6 text-center">
-                      {authMode === 'login' ? 'Não tem uma conta?' : 'Já tem uma conta?'}
-                      <button
-                        type="button"
-                        onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
-                        className="ml-2 text-primary font-bold hover:underline"
-                      >
-                        {authMode === 'login' ? 'Cadastre-se' : 'Faça Login'}
-                      </button>
-                    </p>
-                  </>
+                      {authMode === 'login' ? 'Cadastre-se' : 'Faça Login'}
+                    </button>
+                  </p>
                 )}
               </form>
             </motion.div>

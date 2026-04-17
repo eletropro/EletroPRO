@@ -191,7 +191,7 @@ export default function BudgetList({ budgets, userProfile, onEdit }: BudgetListP
                 <Input 
                   id="amount"
                   type="number"
-                  value={receiptAmount}
+                  value={receiptAmount === '0' ? '' : receiptAmount}
                   onChange={(e) => setReceiptAmount(e.target.value)}
                   autoFocus
                 />

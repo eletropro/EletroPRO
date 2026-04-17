@@ -139,6 +139,7 @@ export const generateBudgetPDF = (budget: Budget, userProfile: UserProfile) => {
 export const generateContractPDF = (budget: Budget, userProfile: UserProfile) => {
   const doc = new jsPDF() as jsPDFWithPlugin;
   const pageWidth = doc.internal.pageSize.getWidth();
+  const budgetDisplayId = budget.budgetNumber ? budget.budgetNumber.toString().padStart(4, '0') : budget.id.slice(0, 8).toUpperCase();
 
   // Header
   doc.setFillColor(30, 41, 59);
@@ -150,13 +151,14 @@ export const generateContractPDF = (budget: Budget, userProfile: UserProfile) =>
   doc.text('CONTRATO DE PRESTAÇÃO DE SERVIÇOS', pageWidth / 2, 25, { align: 'center' });
   
   doc.setFontSize(10);
-  doc.text(`CONTRATO Nº ${budget.budgetNumber ? budget.budgetNumber.toString().padStart(4, '0') : budget.id.slice(0, 8).toUpperCase()}`, pageWidth / 2, 35, { align: 'center' });
+  doc.text(`REFERÊNCIA: ORÇAMENTO Nº ${budgetDisplayId}`, pageWidth / 2, 35, { align: 'center' });
 
   let y = 60;
   doc.setTextColor(30, 41, 59);
-  doc.setFontSize(11);
+  doc.setFontSize(10.5);
   
   const addSectionTitle = (title: string) => {
+    if (y > 270) { doc.addPage(); y = 20; }
     doc.setFont('helvetica', 'bold');
     doc.text(title, 14, y);
     y += 7;
@@ -165,43 +167,65 @@ export const generateContractPDF = (budget: Budget, userProfile: UserProfile) =>
 
   const addParagraph = (text: string) => {
     const splitText = doc.splitTextToSize(text, pageWidth - 28);
+    if (y + (splitText.length * 5) > 280) { doc.addPage(); y = 20; }
     doc.text(splitText, 14, y);
-    y += (splitText.length * 5) + 5;
+    y += (splitText.length * 5) + 6;
   };
 
   // 1. Partes
   addSectionTitle('1. DAS PARTES');
-  addParagraph(`CONTRATADA: ${userProfile.businessName || userProfile.displayName || '____________________'}, inscrito(a) sob o CNPJ/CPF ${userProfile.businessCpfCnpj || '____________________'}, com sede em ${userProfile.businessAddress || '____________________'}.`);
-  addParagraph(`CONTRATANTE: ${budget.clientName.toUpperCase()}, residente em ${budget.clientAddress || '____________________'}.`);
+  const providerInfo = [
+    userProfile.businessName || userProfile.displayName || '____________________',
+    userProfile.businessCpfCnpj ? `inscrito(a) sob o CPF/CNPJ nº ${userProfile.businessCpfCnpj}` : 'portador(a) do CPF/CNPJ nº ____________________',
+    userProfile.businessAddress ? `com sede/domicílio em ${userProfile.businessAddress}` : 'com endereço em ____________________'
+  ].join(', ');
+
+  addParagraph(`CONTRATADA: ${providerInfo}, doravante denominada simplesmente CONTRATADA.`);
+  addParagraph(`CONTRATANTE: ${budget.clientName.toUpperCase()}, portador(a) do CPF/CNPJ nº ____________________, residente e domiciliado(a) em ${budget.clientAddress || '____________________'}, doravante denominado simplesmente CONTRATANTE.`);
 
   // 2. Objeto
   addSectionTitle('2. DO OBJETO');
-  addParagraph('O presente contrato tem como objeto a prestação de serviços elétricos profissionais, conforme detalhado no orçamento anexo, incluindo instalação, manutenção e/ou reparos de sistemas elétricos conforme as normas técnicas vigentes (NBR 5410).');
+  const itemsList = budget.items.map(item => `- ${item.quantity} ${item.unit || 'un'} de ${item.description}`).join('\n');
+  const objetoText = `O presente instrumento tem como objeto a prestação, pela CONTRATADA, de serviços elétricos profissionais consistindo em:\n${itemsList}\n\nTodos os serviços serão executados em estrita observância às normas técnicas de segurança (NBR 5410) e especificações do fabricante.`;
+  addParagraph(objetoText);
 
   // 3. Valor e Pagamento
-  addSectionTitle('3. DO VALOR E FORMA DE PAGAMENTO');
-  addParagraph(`O valor total dos serviços contratados é de R$ ${budget.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. O pagamento será realizado conforme acordado entre as partes, sendo as observações de pagamento: ${budget.notes || 'Conforme orçamento'}.`);
+  addSectionTitle('3. DO PREÇO E DAS CONDIÇÕES DE PAGAMENTO');
+  addParagraph(`Pela execução dos serviços objeto deste contrato, o(a) CONTRATANTE pagará à CONTRATADA a importância total de R$ ${budget.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`);
+  addParagraph(`O pagamento será efetuado da seguinte forma: ${budget.notes || 'Conforme acordado entre as partes'}. Em caso de atraso, poderá ser aplicada multa de 2% e juros moratórios de 1% ao mês.`);
 
-  // 4. Prazos
-  addSectionTitle('4. DOS PRAZOS');
-  addParagraph('A execução dos serviços terá início na data acordada após a assinatura deste instrumento, com prazo estimado de conclusão condicionado às condições do local e fornecimento de materiais.');
+  // 4. Obrigações
+  addSectionTitle('4. DAS OBRIGAÇÕES');
+  addParagraph('CONTRATADA: Executar os serviços com zelo, técnica e materiais adequados (quando inclusos), cumprindo o cronograma estabelecido.');
+  addParagraph('CONTRATANTE: Proporcionar livre acesso ao local da execução, fornecer os materiais necessários (quando não inclusos na contratação) e efetuar o pagamento nos prazos estipulados.');
 
   // 5. Garantia
   addSectionTitle('5. DA GARANTIA');
-  addParagraph('A CONTRATADA oferece garantia de 90 (noventa) dias sobre a mão de obra executada, contados a partir da data de entrega dos serviços, não cobrindo danos por mau uso, variações da concessionária de energia ou intervenção de terceiros.');
+  addParagraph('A CONTRATADA concede garantia de 90 (noventa) dias sobre a mão de obra executada, contados da data de conclusão dos serviços. A garantia não cobre danos decorrentes de mau uso, sobrecarga do sistema provocada pelo usuário ou intervenções de terceiros não autorizados.');
 
   // 6. Foro
   addSectionTitle('6. DO FORO');
-  addParagraph('As partes elegem o foro da Comarca de Brasília-DF para dirimir quaisquer dúvidas oriundas deste contrato.');
+  addParagraph('As partes elegem o foro da Comarca onde se localiza o imóvel objeto da prestação dos serviços para dirimir quaisquer controvérsias oriundas deste contrato.');
 
-  y += 20;
-  doc.text(`Brasília, ${format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}.`, 14, y);
+  y += 10;
+  const today = format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+  doc.text(`Local e data: ___________________________, ${today}.`, 14, y);
 
-  y += 40;
+  y += 35;
+  if (y > 270) { doc.addPage(); y = 35; }
+  doc.setDrawColor(30, 41, 59);
   doc.line(14, y, 90, y);
   doc.line(pageWidth - 90, y, pageWidth - 14, y);
+  
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
   doc.text('CONTRATADA', 52, y + 5, { align: 'center' });
   doc.text('CONTRATANTE', pageWidth - 52, y + 5, { align: 'center' });
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.text(userProfile.businessName || userProfile.displayName || '', 52, y + 10, { align: 'center' });
+  doc.text(budget.clientName.toUpperCase(), pageWidth - 52, y + 10, { align: 'center' });
 
   doc.save(`contrato_${budget.clientName.replace(/\s+/g, '_')}.pdf`);
 };
