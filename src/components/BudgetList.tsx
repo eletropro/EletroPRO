@@ -53,13 +53,15 @@ export default function BudgetList({ budgets, userProfile, onEdit }: BudgetListP
           createdAt: serverTimestamp()
         });
 
-        // Also update budget status to completed
-        await updateDoc(doc(db, 'budgets', selectedBudget.id), {
-          status: 'completed',
-          updatedAt: serverTimestamp()
-        });
+        // Trigger status change if paid in full or more
+        if (amount >= selectedBudget.totalAmount) {
+          await updateDoc(doc(db, 'budgets', selectedBudget.id), {
+            status: 'completed',
+            updatedAt: serverTimestamp()
+          });
+        }
       } catch (error) {
-        console.error("Error creating transaction or updating budget:", error);
+        console.error("Error confirming receipt:", error);
       }
 
       setIsReceiptDialogOpen(false);
