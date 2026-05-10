@@ -5,8 +5,8 @@ import { FileDown, Receipt, Edit, Trash2, Calendar, User, DollarSign, CheckCircl
 import { generateBudgetPDF, generateReceiptPDF, generateContractPDF } from '../lib/pdf';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { db } from '../firebase';
-import { deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { db, auth } from '../firebase';
+import { deleteDoc, doc, updateDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
 import { Input } from './ui/input';
@@ -35,9 +35,27 @@ export default function BudgetList({ budgets, userProfile, onEdit }: BudgetListP
     setIsReceiptDialogOpen(true);
   };
 
-  const confirmReceipt = () => {
-    if (selectedBudget) {
-      generateReceiptPDF(selectedBudget, userProfile, Number(receiptAmount));
+  const confirmReceipt = async () => {
+    if (selectedBudget && auth.currentUser) {
+      const amount = Number(receiptAmount);
+      generateReceiptPDF(selectedBudget, userProfile, amount);
+      
+      // Add transaction to finance
+      try {
+        await addDoc(collection(db, 'transactions'), {
+          userId: auth.currentUser.uid,
+          type: 'income',
+          category: 'Serviços Elétricos',
+          amount: amount,
+          description: `Recibo: ${selectedBudget.clientName} (Orçamento #${selectedBudget.budgetNumber})`,
+          date: new Date().toISOString(),
+          budgetId: selectedBudget.id,
+          createdAt: serverTimestamp()
+        });
+      } catch (error) {
+        console.error("Error creating transaction:", error);
+      }
+
       setIsReceiptDialogOpen(false);
     }
   };

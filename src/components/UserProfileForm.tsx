@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { UserCircle, Building2, Phone, MapPin, Save, Zap, Fingerprint } from 'lucide-react';
+import { UserCircle, Building2, Phone, MapPin, Save, Zap, Fingerprint, Wallet } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface UserProfileFormProps {
@@ -18,6 +18,7 @@ export default function UserProfileForm({ profile }: UserProfileFormProps) {
   const [businessPhone, setBusinessPhone] = useState(profile.businessPhone || '');
   const [businessAddress, setBusinessAddress] = useState(profile.businessAddress || '');
   const [businessCpfCnpj, setBusinessCpfCnpj] = useState(profile.businessCpfCnpj || '');
+  const [paymentMethods, setPaymentMethods] = useState(profile.paymentMethods || '');
   const [displayName, setDisplayName] = useState(profile.displayName || '');
 
   const handleSave = async (e: React.FormEvent) => {
@@ -29,6 +30,7 @@ export default function UserProfileForm({ profile }: UserProfileFormProps) {
         businessPhone,
         businessAddress,
         businessCpfCnpj,
+        paymentMethods,
         displayName
       });
       alert('Perfil atualizado com sucesso!');
@@ -114,6 +116,18 @@ export default function UserProfileForm({ profile }: UserProfileFormProps) {
                   onChange={e => setBusinessCpfCnpj(e.target.value)} 
                   placeholder="000.000.000-00"
                   className="h-14 rounded-2xl bg-background border-border/50 focus:ring-primary text-lg"
+                />
+              </div>
+              <div className="space-y-3 md:col-span-2">
+                <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest flex items-center gap-2">
+                  <Wallet size={14} className="text-primary" />
+                  Métodos de Pagamento Aceitos
+                </Label>
+                <textarea 
+                  value={paymentMethods} 
+                  onChange={e => setPaymentMethods(e.target.value)} 
+                  placeholder="Ex: Pix: (61) 99999-9999, Cartão de Crédito, Transferência Bancária..."
+                  className="w-full h-24 p-4 rounded-2xl bg-background border border-border/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all resize-none text-lg"
                 />
               </div>
             </div>

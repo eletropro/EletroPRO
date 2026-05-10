@@ -23,6 +23,7 @@ export default function BudgetForm({ budget, clients, onSuccess, onClose }: Budg
   const [clientPhone, setClientPhone] = useState(budget?.clientPhone || '');
   const [clientAddress, setClientAddress] = useState(budget?.clientAddress || '');
   const [items, setItems] = useState<BudgetItem[]>(budget?.items || []);
+  const [validity, setValidity] = useState(budget?.validity || '15 dias');
   const [notes, setNotes] = useState(budget?.notes || '');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -78,6 +79,7 @@ export default function BudgetForm({ budget, clients, onSuccess, onClose }: Budg
       clientPhone,
       clientAddress,
       date: new Date().toISOString(),
+      validity,
       items,
       totalAmount,
       status: budget?.status || 'pending',
@@ -163,6 +165,10 @@ export default function BudgetForm({ budget, clients, onSuccess, onClose }: Budg
           <div className="space-y-2">
             <Label className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Endereço</Label>
             <Input value={clientAddress} onChange={e => setClientAddress(e.target.value)} className="h-14 rounded-2xl bg-accent/20 border-border/50" />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Validade do Orçamento</Label>
+            <Input value={validity} onChange={e => setValidity(e.target.value)} placeholder="Ex: 15 dias" className="h-14 rounded-2xl bg-accent/20 border-border/50" />
           </div>
         </div>
 

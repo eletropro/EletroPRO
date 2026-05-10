@@ -7,6 +7,7 @@ export interface UserProfile {
   businessPhone?: string;
   businessAddress?: string;
   businessCpfCnpj?: string;
+  paymentMethods?: string;
 }
 
 export interface Client {
@@ -36,6 +37,7 @@ export interface Budget {
   clientPhone?: string;
   clientAddress?: string;
   date: string;
+  validity?: string;
   items: BudgetItem[];
   totalAmount: number;
   status: 'pending' | 'approved' | 'completed' | 'cancelled';

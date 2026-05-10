@@ -40,9 +40,10 @@ export const generateBudgetPDF = (budget: Budget, userProfile: UserProfile) => {
   doc.setFontSize(10);
   doc.setTextColor(71, 85, 105);
   const budgetDisplayId = budget.budgetNumber ? budget.budgetNumber.toString().padStart(4, '0') : budget.id.slice(0, 8).toUpperCase();
-  doc.text(`ORÇAMENTO: #${budgetDisplayId}`, pageWidth - 14, 20, { align: 'right' });
-  doc.text(`DATA: ${format(new Date(budget.date), 'dd/MM/yyyy', { locale: ptBR })}`, pageWidth - 14, 26, { align: 'right' });
-  doc.text(`STATUS: ${statusMap[budget.status] || budget.status.toUpperCase()}`, pageWidth - 14, 32, { align: 'right' });
+  doc.text(`ORÇAMENTO: #${budgetDisplayId}`, pageWidth - 14, 18, { align: 'right' });
+  doc.text(`DATA: ${format(new Date(budget.date), 'dd/MM/yyyy', { locale: ptBR })}`, pageWidth - 14, 24, { align: 'right' });
+  doc.text(`VALIDADE: ${budget.validity || '15 dias'}`, pageWidth - 14, 30, { align: 'right' });
+  doc.text(`STATUS: ${statusMap[budget.status] || budget.status.toUpperCase()}`, pageWidth - 14, 36, { align: 'right' });
 
   // Business Info
   doc.setFontSize(11);
@@ -105,20 +106,33 @@ export const generateBudgetPDF = (budget: Budget, userProfile: UserProfile) => {
     }
   });
 
-  // Notes
-  const finalY = doc.lastAutoTable.finalY + 15;
+  // Notes & Payment
+  let currentY = doc.lastAutoTable.finalY + 15;
+  
   if (budget.notes) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.text('OBSERVAÇÕES:', 14, finalY);
+    doc.text('OBSERVAÇÕES:', 14, currentY);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     const splitNotes = doc.splitTextToSize(budget.notes, pageWidth - 28);
-    doc.text(splitNotes, 14, finalY + 7);
+    doc.text(splitNotes, 14, currentY + 7);
+    currentY += (splitNotes.length * 5) + 12;
+  }
+
+  if (userProfile.paymentMethods) {
+    if (currentY > 230) { doc.addPage(); currentY = 20; }
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('MÉTODOS DE PAGAMENTO ACEITOS:', 14, currentY);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    const splitPayments = doc.splitTextToSize(userProfile.paymentMethods, pageWidth - 28);
+    doc.text(splitPayments, 14, currentY + 7);
   }
 
   // Signature lines
-  const sigY = Math.max(finalY + 40, 250);
+  const sigY = Math.max(currentY + 40, 250);
   doc.setDrawColor(203, 213, 225);
   doc.line(14, sigY, 90, sigY);
   doc.line(pageWidth - 90, sigY, pageWidth - 14, sigY);
@@ -192,7 +206,12 @@ export const generateContractPDF = (budget: Budget, userProfile: UserProfile) =>
   // 3. Valor e Pagamento
   addSectionTitle('3. DO PREÇO E DAS CONDIÇÕES DE PAGAMENTO');
   addParagraph(`Pela execução dos serviços objeto deste contrato, o(a) CONTRATANTE pagará à CONTRATADA a importância total de R$ ${budget.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`);
-  addParagraph(`O pagamento será efetuado da seguinte forma: ${budget.notes || 'Conforme acordado entre as partes'}. Em caso de atraso, poderá ser aplicada multa de 2% e juros moratórios de 1% ao mês.`);
+  
+  let paymentText = budget.notes || 'Conforme acordado entre as partes';
+  if (userProfile.paymentMethods) {
+    paymentText += `\n\nMÉTODOS DE PAGAMENTO ACEITOS:\n${userProfile.paymentMethods}`;
+  }
+  addParagraph(`O pagamento será efetuado da seguinte forma: ${paymentText}. Em caso de atraso, poderá ser aplicada multa de 2% e juros moratórios de 1% ao mês.`);
 
   // 4. Obrigações
   addSectionTitle('4. DAS OBRIGAÇÕES');
@@ -236,34 +255,50 @@ export const generateReceiptPDF = (budget: Budget, userProfile: UserProfile, cus
 
   const finalAmount = customAmount !== undefined ? customAmount : budget.totalAmount;
 
-  // Border
-  doc.setDrawColor(245, 158, 11);
-  doc.setLineWidth(1);
-  doc.rect(10, 10, pageWidth - 20, 130);
-
+  // Header Background
+  doc.setFillColor(30, 41, 59);
+  doc.rect(0, 0, pageWidth, 40, 'F');
+  
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(24);
-  doc.setTextColor(30, 41, 59);
-  doc.text('RECIBO', pageWidth / 2, 35, { align: 'center' });
+  doc.setTextColor(255, 255, 255);
+  doc.text('RECIBO DE PAGAMENTO', pageWidth / 2, 25, { align: 'center' });
+
+  // Border
+  doc.setDrawColor(245, 158, 11);
+  doc.setLineWidth(0.5);
+  doc.rect(10, 50, pageWidth - 20, 100);
 
   doc.setFontSize(32);
   doc.setTextColor(245, 158, 11);
-  doc.text(`R$ ${finalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, pageWidth / 2, 55, { align: 'center' });
+  doc.text(`R$ ${finalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, pageWidth / 2, 75, { align: 'center' });
   
   doc.setFontSize(11);
-  doc.setTextColor(71, 85, 105);
+  doc.setTextColor(30, 41, 59);
   doc.setFont('helvetica', 'normal');
   
   const budgetDisplayId = budget.budgetNumber ? budget.budgetNumber.toString().padStart(4, '0') : budget.id.slice(0, 8).toUpperCase();
-  const text = `Recebi(emos) de ${budget.clientName.toUpperCase()} a importância de R$ ${finalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} referente aos serviços elétricos detalhados no orçamento #${budgetDisplayId}.`;
+  const text = `Recebi(emos) de ${budget.clientName.toUpperCase()}, a importância supra de R$ ${finalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} referente aos serviços elétricos descritos no orçamento #${budgetDisplayId}.`;
+  
   const splitText = doc.splitTextToSize(text, pageWidth - 40);
-  doc.text(splitText, 20, 75);
+  doc.text(splitText, 20, 95);
 
-  doc.text(`Brasília, DF - ${format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}`, 20, 100);
+  doc.setFontSize(10);
+  doc.text(`Local e data: ___________________________, ${format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}`, 20, 120);
 
-  doc.line(pageWidth / 2 - 40, 125, pageWidth / 2 + 40, 125);
+  // Signature
+  doc.line(pageWidth / 2 - 40, 140, pageWidth / 2 + 40, 140);
   doc.setFontSize(9);
-  doc.text(userProfile.displayName || userProfile.businessName || 'ASSINATURA', pageWidth / 2, 130, { align: 'center' });
+  doc.setFont('helvetica', 'bold');
+  doc.text(userProfile.businessName || userProfile.displayName || 'ASSINATURA', pageWidth / 2, 145, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.text(userProfile.businessCpfCnpj || '', pageWidth / 2, 149, { align: 'center' });
+
+  // Footer
+  const pageHeight = doc.internal.pageSize.getHeight();
+  doc.setFontSize(8);
+  doc.setTextColor(148, 163, 184);
+  doc.text('Este recibo comprova o pagamento parcial ou total dos serviços citados.', pageWidth / 2, pageHeight - 15, { align: 'center' });
 
   doc.save(`recibo_${budget.clientName.replace(/\s+/g, '_')}.pdf`);
 };
