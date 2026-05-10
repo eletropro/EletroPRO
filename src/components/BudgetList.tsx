@@ -52,8 +52,14 @@ export default function BudgetList({ budgets, userProfile, onEdit }: BudgetListP
           budgetId: selectedBudget.id,
           createdAt: serverTimestamp()
         });
+
+        // Also update budget status to completed
+        await updateDoc(doc(db, 'budgets', selectedBudget.id), {
+          status: 'completed',
+          updatedAt: serverTimestamp()
+        });
       } catch (error) {
-        console.error("Error creating transaction:", error);
+        console.error("Error creating transaction or updating budget:", error);
       }
 
       setIsReceiptDialogOpen(false);
