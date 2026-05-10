@@ -16,8 +16,10 @@ export default function Dashboard({ budgets, transactions }: DashboardProps) {
     const totalExpense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
     const balance = totalIncome - totalExpense;
     const pendingBudgets = budgets.filter(b => b.status === 'pending').length;
+    const approvedBudgets = budgets.filter(b => b.status === 'approved').length;
+    const completedBudgets = budgets.filter(b => b.status === 'completed').length;
     
-    return { totalIncome, totalExpense, balance, pendingBudgets };
+    return { totalIncome, totalExpense, balance, pendingBudgets, approvedBudgets, completedBudgets };
   }, [budgets, transactions]);
 
   const chartData = useMemo(() => {
@@ -62,12 +64,14 @@ export default function Dashboard({ budgets, transactions }: DashboardProps) {
       className="space-y-10"
     >
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
         {[
           { label: 'Saldo Total', value: stats.balance, icon: DollarSign, color: 'text-primary', bg: 'bg-primary/10' },
           { label: 'Receitas', value: stats.totalIncome, icon: ArrowUpRight, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
           { label: 'Despesas', value: stats.totalExpense, icon: ArrowDownRight, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-          { label: 'Pendentes', value: stats.pendingBudgets, icon: FileText, color: 'text-amber-500', bg: 'bg-amber-500/10', isCount: true },
+          { label: 'Orc. Pendentes', value: stats.pendingBudgets, icon: FileText, color: 'text-amber-500', bg: 'bg-amber-500/10', isCount: true },
+          { label: 'Orc. Aprovados', value: stats.approvedBudgets, icon: FileText, color: 'text-blue-500', bg: 'bg-blue-500/10', isCount: true },
+          { label: 'Orc. Pagos', value: stats.completedBudgets, icon: FileText, color: 'text-emerald-500', bg: 'bg-emerald-500/10', isCount: true },
         ].map((stat, i) => (
           <motion.div key={i} variants={item}>
             <Card className="border-border bg-accent/30 backdrop-blur-sm hover:bg-accent/50 transition-colors rounded-3xl overflow-hidden group">
